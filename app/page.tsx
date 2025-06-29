@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useAccount } from "wagmi"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProgressIndicator } from "@/components/progress-indicator"
 import { Header } from "@/components/header"
@@ -18,11 +19,13 @@ const STEPS = ["CONNECT", "SCAN", "ANALYZE", "OPTIMIZE", "AUTOMATE", "MONITOR"]
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState("connect")
-  const [walletAddress, setWalletAddress] = useState<string | null>(null)
   const [positions, setPositions] = useState<any[]>([])
   const [strategies, setStrategies] = useState<any[]>([])
   const [isAutomated, setIsAutomated] = useState(false)
   const [activityFeed, setActivityFeed] = useState<string[]>([])
+
+  // Use wagmi's useAccount hook for real wallet connection
+  const { address: walletAddress, isConnected } = useAccount()
 
   const getCurrentStep = () => {
     const stepMap: { [key: string]: number } = {
@@ -37,8 +40,17 @@ export default function HomePage() {
   }
 
   const handleConnect = (address: string) => {
-    setWalletAddress(address)
-    setActiveTab("scan")
+    // When wallet connects, automatically move to scan tab
+    if (address && isConnected) {
+      setActiveTab("scan")
+    } else if (!address) {
+      // When wallet disconnects, go back to connect tab
+      setActiveTab("connect")
+      setPositions([])
+      setStrategies([])
+      setIsAutomated(false)
+      setActivityFeed([])
+    }
   }
 
   const handleScanComplete = (discoveredPositions: any[]) => {
@@ -61,26 +73,35 @@ export default function HomePage() {
   }
 
   const renderTabContent = () => {
+    // If wallet not connected, always show connect tab
+    if (!isConnected || !walletAddress) {
+      return <ConnectTab />
+    }
+
     switch (activeTab) {
       case "connect":
         return <ConnectTab />
       case "scan":
-        return walletAddress ? <ScanTab walletAddress={walletAddress} onScanComplete={handleScanComplete} /> : null
+        return <ScanTab walletAddress={walletAddress} onScanComplete={handleScanComplete} />
       case "analyze":
-        return walletAddress ? (
-          <AnalyzeTab walletAddress={walletAddress} onPositionsFound={handleScanComplete} setActiveTab={setActiveTab} />
-        ) : null
+        return (
+          <AnalyzeTab 
+            walletAddress={walletAddress} 
+            onPositionsFound={handleScanComplete} 
+            setActiveTab={setActiveTab} 
+          />
+        )
       case "optimize":
-        return walletAddress ? (
+        return (
           <OptimizeTab
             walletAddress={walletAddress}
             positions={positions}
             onOptimizationComplete={handleOptimizationComplete}
             setActiveTab={setActiveTab}
           />
-        ) : null
+        )
       case "automate":
-        return walletAddress ? (
+        return (
           <AutomateTab
             walletAddress={walletAddress}
             strategies={strategies}
@@ -88,9 +109,9 @@ export default function HomePage() {
             onNewActivity={handleNewActivity}
             setActiveTab={setActiveTab}
           />
-        ) : null
+        )
       case "monitor":
-        return walletAddress ? <MonitorTab walletAddress={walletAddress} activityFeed={activityFeed} /> : null
+        return <MonitorTab walletAddress={walletAddress} activityFeed={activityFeed} />
       default:
         return <ConnectTab />
     }
@@ -98,9 +119,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 flex flex-col">
-      <Header walletAddress={walletAddress} onConnect={handleConnect} />
+      <Header onConnect={handleConnect} />
 
-      {walletAddress && (
+      {isConnected && walletAddress && (
         <div className="p-6">
           <ProgressIndicator currentStep={getCurrentStep()} steps={STEPS} />
         </div>
@@ -108,7 +129,7 @@ export default function HomePage() {
 
       <div className="flex-1 px-4 pb-8">
         <div className="max-w-7xl mx-auto">
-          {walletAddress && (
+          {isConnected && walletAddress && (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-6 glass border-white/20 mb-8 p-1">
                 {STEPS.map((step) => (

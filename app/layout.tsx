@@ -1,8 +1,14 @@
-import type React from "react"
+import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
+import { Providers } from "@/components/providers"
 
 const inter = Inter({ subsets: ["latin"] })
+
+export const metadata: Metadata = {
+  title: "BetterYield - AI-Powered Uniswap V3 Optimization",
+  description: "Maximize your liquidity pool yields with intelligent automation powered by Chainlink infrastructure",
+}
 
 export default function RootLayout({
   children,
@@ -11,11 +17,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <Providers>
+          {children}
+        </Providers>
+      </body>
     </html>
   )
 }
-
-export const metadata = {
-      generator: 'v0.dev'
-    };

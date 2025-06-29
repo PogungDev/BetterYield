@@ -9,7 +9,10 @@
     "start": "next start",
     "compile": "npx hardhat compile",
     "deploy": "npx hardhat run scripts/deploy-contract.js --network arbitrum-sepolia",
-    "verify": "npx hardhat verify --network arbitrum-sepolia"
+    "deploy:contract": "npx hardhat run scripts/deploy-contract.js --network arbitrum-sepolia",
+    "verify": "npx hardhat verify --network arbitrum-sepolia",
+    "check-setup": "node check-setup.js",
+    "setup": "npm run check-setup && npm run compile"
   },
   "dependencies": {
     "@ai-sdk/openai": "latest",
